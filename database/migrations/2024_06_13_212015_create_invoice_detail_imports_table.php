@@ -13,9 +13,6 @@ return new class extends Migration
     {
         Schema::create('invoice_detail_imports', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('invoice_import_id')->constrained()
-                ->onUpdate('cascade')
-                ->onDelete('cascade');
             $table->date('date');
             $table->string('invoice_number');
             $table->unsignedBigInteger('customer_id');

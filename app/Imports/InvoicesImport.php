@@ -5,7 +5,7 @@ namespace App\Imports;
 use App\Models\InvoiceDetailImport;
 use Maatwebsite\Excel\Concerns\ToModel;
 
-class InvoicesImport implements ToModel
+class InvoicesImport implements ToModel, WithStartRow
 {
     /**
     * @param array $row
@@ -25,15 +25,19 @@ class InvoicesImport implements ToModel
             'customer_group_name' => $row[7],
             'seller_id' => $row[8],
             'seller_name' => $row[9],
-            
             'quantity' => $row[10],
             'uom' => $row[11],
-            'material_name' => $row[13],
-            'category_l1_id' => $row[14],
-            'category_l1_name' => $row[15],
-            'total' => $row[20],
-            'unit_price' => $row[21],
-            'payment_method_name' => $row[23],
+            'material_name' => $row[12],
+            'category_l1_id' => $row[13],
+            'category_l1_name' => $row[14],
+            'total' => $row[15],
+            'unit_price' => $row[16],
+            'payment_method_name' => $row[17],
         ]);
+    }
+
+    public function startRow(): int
+    {
+        return 2;
     }
 }
