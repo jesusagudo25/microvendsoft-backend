@@ -25,12 +25,12 @@ return new class extends Migration
             $table->string('seller_name');
             $table->unsignedBigInteger('quantity');
             $table->string('uom');
-            $table->string('material_name');
-            $table->unsignedBigInteger('category_l1_id');
-            $table->string('category_l1_name');
-            $table->decimal('total', 10, 2);
-            $table->decimal('unit_price', 10, 2);
-            $table->string('payment_method_name');
+            $table->string('material_name')->nullable();
+            $table->unsignedBigInteger('category_l1_id')->nullable();
+            $table->string('category_l1_name')->nullable();
+            $table->decimal('total', 10, 2)->nullable();
+            $table->decimal('unit_price', 10, 2)->nullable();
+            $table->string('payment_method_name')->nullable();
             $table->timestamps();
         });
     }

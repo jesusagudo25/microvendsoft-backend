@@ -16,19 +16,24 @@ return new class extends Migration
             $table->string('invoice_number');
             $table->date('date');
             $table->foreignId('user_id')->constrained()
+                ->nullable()
                 ->onUpdate('cascade')
                 ->onDelete('cascade');
             $table->foreignId('customer_id')->constrained()
+                ->nullable()
                 ->onUpdate('cascade')
                 ->onDelete('cascade');
             $table->foreignId('seller_id')->constrained()
+                ->nullable()
                 ->onUpdate('cascade')
                 ->onDelete('cascade');
-            $table->foreignId('company_id')->constrained()
+            $table->foreignId('company_id')
+                ->nullable()
+                ->constrained()
                 ->onUpdate('cascade')
                 ->onDelete('cascade');
-            $table->string('payment_method');
-            $table->decimal('total', 10, 2);
+            $table->string('payment_method')->nullable();
+            $table->decimal('total', 10, 2)->nullable();
             $table->enum('status', [ 'paid', 'canceled']);
             $table->timestamps();
         });

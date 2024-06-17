@@ -4,8 +4,11 @@ namespace App\Imports;
 
 use App\Models\InvoiceDetailImport;
 use Maatwebsite\Excel\Concerns\ToModel;
+use Maatwebsite\Excel\Concerns\WithStartRow;
+use Maatwebsite\Excel\Concerns\WithBatchInserts;
+use Maatwebsite\Excel\Concerns\WithChunkReading;
 
-class InvoicesImport implements ToModel, WithStartRow
+class InvoicesImport implements ToModel, WithStartRow, WithBatchInserts, WithChunkReading
 {
     /**
     * @param array $row
@@ -39,5 +42,15 @@ class InvoicesImport implements ToModel, WithStartRow
     public function startRow(): int
     {
         return 2;
+    }
+
+    public function batchSize(): int
+    {
+        return 10000;
+    }
+
+    public function chunkSize(): int
+    {
+        return 10000;
     }
 }

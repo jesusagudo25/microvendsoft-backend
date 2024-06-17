@@ -17,11 +17,12 @@ return new class extends Migration
                 ->onUpdate('cascade')
                 ->onDelete('cascade');
             $table->foreignId('product_id')->constrained()
+                ->nullable()
                 ->onUpdate('cascade')
                 ->onDelete('cascade');
-            $table->decimal('quantity', 10, 2);
-            $table->decimal('unit_price', 10, 2);
-            $table->decimal('total', 10, 2);
+            $table->decimal('quantity', 10, 2)->nullable();
+            $table->decimal('unit_price', 10, 2)->nullable();
+            $table->decimal('total', 10, 2)->nullable();
             $table->timestamps();
         });
     }

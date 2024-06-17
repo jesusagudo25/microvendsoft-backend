@@ -8,4 +8,6 @@ use Illuminate\Database\Eloquent\Model;
 class InvoiceImport extends Model
 {
     use HasFactory;
+
+    protected $fillable = ['company_id', 'file_name', 'user_id', 'status'];
 }

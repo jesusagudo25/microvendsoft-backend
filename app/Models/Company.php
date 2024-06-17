@@ -18,6 +18,8 @@ class Company extends Model
 
     public function sellers()
     {
-        return $this->hasMany(Seller::class);
+        return $this->belongsToMany(Seller::class, 'company_seller')
+            ->withPivot('goal', 'period_start', 'period_end');
     }
+
 }

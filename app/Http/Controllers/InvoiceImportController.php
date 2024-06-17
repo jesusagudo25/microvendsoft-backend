@@ -6,6 +6,7 @@ use App\Models\Category;
 use App\Models\Customer;
 use App\Models\Invoice;
 use App\Imports\InvoicesImport;
+use App\Jobs\ProcessLargeExcel;
 use App\Models\InvoiceDetailImport;
 use App\Models\InvoiceImport;
 use App\Models\Product;
@@ -32,73 +33,24 @@ class InvoiceImportController extends Controller
         $companyId = $request->has('company_id') ? $request->company_id : null;
         $filename = $request->file('file');
 
-        $collectionExcel = Excel::toCollection(new InvoicesImport(), $filename);
+        //set unlimited memory limit
+        ini_set('memory_limit', '-1');
+        set_time_limit(0);
 
-        return response()->json(['message' => 'Invoices imported successfully']);
+        if ($filename) {
+            $filename = $filename->store('invoices', 'public');
+            $invoiceImport = InvoiceImport::create([
+                'user_id' => 1,
+                'file_name' => $filename,
+                'company_id' => $companyId,
+            ]);
 
-        try {
-            collect($collectionExcel[0])->each(function ($row, $key) use ($companyId) {
-                //Create customer
-                
+            ProcessLargeExcel::dispatch(storage_path('app/public/' . $filename), $companyId);
 
-                $customer = Customer::firstOrCreate([
-                    'code' => $row[2],
-                    'name' => $row[3],
-                    'branch_code' => $row[4],
-                    'branch_name' => $row[5],
-                    'group_code' => $row[6],
-                    'group_name' => $row[7],
-                ]);
-    
-                //Create Seller
-                $seller = Seller::firstOrCreate([
-                    'code' => $row[8],
-                    'name' => $row[9],
-                ]);
-    
-                //Create Category
-                $category = Category::firstOrCreate([
-                    'code' => $row[13],
-                    'name' => $row[14],
-                ]);
-    
-                //Crate product
-                $product = Product::firstOrCreate([
-                    'name' => $row[12],
-                    'category_id' => $category->id,
-                    'uom' => $row[11],
-                ]);
-    
-                //Create Invoice
-                //date: 02.01.2024 to 2024-01-02
-                $invoice = Invoice::firstOrCreate([
-                    'date' => date('Y-m-d', strtotime(str_replace('.', '-', $row[0]))),
-                    'invoice_number' => $row[1],
-                    'customer_id' => $customer->id,
-                    'seller_id' => $seller->id,
-                    'company_id' => $companyId,
-                    'total' => $row[15],
-                    'payment_method_name' => $row[17],
-                ]);
-    
-                //Create Invoice Detail
-                $invoice->details()->create([
-                    'quantity' => $row[10],
-                    'product_id' => $product->id,
-                    'unit_price' => $row[16],
-                    'total' => $row[15],
-                ]);
-
-                
-            }); 
-    
-        } catch (\Throwable $th) {
-            $message = $th->getMessage();
-            return response()->json(['message' => $message], 500);
+            return response()->json(['message' => 'Invoices imported successfully'], 201);
+        }else{
+            return response()->json(['message' => 'No file uploaded'], 400);
         }
-
-        return response()->json(['message' => 'Invoices imported successfully']);
-
 
     }
 

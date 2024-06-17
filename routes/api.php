@@ -1,7 +1,7 @@
 <?php
 
 use App\Http\Controllers\InvoiceImportController;
-use App\Models\Invoice;
+use App\Http\Controllers\InvoiceController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -20,4 +20,14 @@ Route::get('/test', function () {
 
 Route::controller(InvoiceImportController::class)->group(function () {
     Route::post('/import-invoices', 'store');
+});
+
+// Invoices
+Route::controller(InvoiceController::class)->group(function () {
+    Route::get('/invoices', 'index');
+    Route::get('/invoices-report/{start_date}/{end_date}/{company_id}', 'report');
+    Route::get('/invoices/{id}', 'show');
+    Route::post('/invoices', 'store');
+    Route::put('/invoices/{id}', 'update');
+    Route::delete('/invoices/{id}', 'destroy');
 });
