@@ -21,6 +21,13 @@ class InvoiceController extends Controller
     {
         ini_set('memory_limit', '-1');
         
+        $sellersSpecial = [
+            12,
+            35,
+            40,
+            11,
+            38
+        ];
 
         $imgsCompany = [
             1 => 'https://gathanasiadisr.com/wp-content/uploads/2016/06/Avicola-Grecia.jpg',
@@ -40,6 +47,34 @@ class InvoiceController extends Controller
             //Empresa sales
         $invoicesTotalMonth = Invoice::whereBetween('date', [$start_date, $end_date])
             ->where('company_id', $company_id)
+            ->whereNotIn('seller_id', $sellersSpecial)
+            ->selectRaw('sum(total) as total_amount')
+            ->first();
+
+        //Obtener el total de ventas del mes actual y los anteriores pero del mismo año
+        $salesMonths = [0,0,0,0,0,0,0,0,0,0,0,0];
+        $currentMonth = date('m', strtotime($start_date));
+        $currentYear = date('Y', strtotime($start_date));
+
+        //Obtener el total de ventas del mes actual y los anteriores pero del mismo año
+        for ($i = 1; $i <= $currentMonth; $i++) {
+
+            $start = date('Y-m-d', strtotime($currentYear.'-'.$i.'-01'));
+            $end = date('Y-m-t', strtotime($currentYear.'-'.$i.'-01'));
+
+            $result = Invoice::whereBetween('date', [$start, $end])
+                ->where('company_id', $company_id)
+                ->selectRaw('sum(total) as total_amount')
+                ->first();
+
+            $salesMonths[$i-1] = $result->total_amount;
+        }
+        
+
+
+        $invoicesTotalSpecial = Invoice::whereBetween('date', [$start_date, $end_date])
+            ->where('company_id', $company_id)
+            ->whereIn('seller_id', $sellersSpecial)
             ->selectRaw('sum(total) as total_amount')
             ->first();
         
@@ -54,10 +89,11 @@ class InvoiceController extends Controller
         //Segundo reporte: Total de ventas por empresa, agrupado por seller_id y sumando el total de venta, y se compara con la cuota establecida para el vendedor
             //De acuerdoa al porcentaje de cumplimiento de la cuota, se debe mostrar un color en el reporte, verde si se cumplió, amarillo si se acercó al 100% y rojo si no se cumplió
             //Este porcentaje nos ayudará a identificar si el vendedor ganara una comisión por cumplimiento de cuota
-        
+        //corregir aqui que no parte de invoice, porque puede que el vendedor no venda nada.. y descuadra reporte
         $invoicesGroupedOneSeller = Invoice::join('sellers', 'invoices.seller_id', '=', 'sellers.id')
             ->whereBetween('date', [$start_date, $end_date])
             ->where('company_id', $company_id)
+            ->whereNotIn('seller_id', $sellersSpecial)
             ->selectRaw('invoices.seller_id, sellers.name, sum(total) as total_amount')
             ->groupBy('seller_id')
             ->get();
@@ -91,10 +127,32 @@ class InvoiceController extends Controller
 
         });
 
+        //Ordenar los vendedores por el porcentaje de cumplimiento de la cuota
+        $invoicesGroupedOneSeller = $invoicesGroupedOneSeller->sortByDesc('goal_percentage');
+
+        $invoicesGroupedOneSellerSpecial = Invoice::join('sellers', 'invoices.seller_id', '=', 'sellers.id')
+            ->whereBetween('date', [$start_date, $end_date])
+            ->where('company_id', $company_id)
+            ->whereIn('seller_id', $sellersSpecial)
+            ->selectRaw('invoices.seller_id, sellers.name, sum(total) as total_amount')
+            ->groupBy('seller_id')
+            ->get();
+
         //Tercer reporte: Obtener los clientes que más compraron en el rango de fechas
         $customersTop10 = Invoice::join('customers', 'invoices.customer_id', '=', 'customers.id')
             ->whereBetween('date', [$start_date, $end_date])
             ->where('company_id', $company_id)
+            ->whereNotIn('seller_id', $sellersSpecial)
+            ->selectRaw('customers.id, customers.name, sum(total) as total_amount')
+            ->groupBy('customer_id')
+            ->orderBy('total_amount', 'desc')
+            ->limit(10)
+            ->get();
+
+        $customersTop10Special = Invoice::join('customers', 'invoices.customer_id', '=', 'customers.id')
+            ->whereBetween('date', [$start_date, $end_date])
+            ->where('company_id', $company_id)
+            ->whereIn('seller_id', $sellersSpecial)
             ->selectRaw('customers.id, customers.name, sum(total) as total_amount')
             ->groupBy('customer_id')
             ->orderBy('total_amount', 'desc')
@@ -105,6 +163,7 @@ class InvoiceController extends Controller
         $customersGroupedTop10 = Invoice::join('customers', 'invoices.customer_id', '=', 'customers.id')
             ->whereBetween('date', [$start_date, $end_date])
             ->where('company_id', $company_id)
+            ->whereNotIn('seller_id', $sellersSpecial)
             ->selectRaw('customers.group_code, customers.group_name, sum(total) as total_amount')
             ->groupBy(['group_code', 'group_name'] )
             ->orderBy('total_amount', 'desc')
@@ -116,6 +175,18 @@ class InvoiceController extends Controller
             ->join('products', 'invoice_details.product_id', '=', 'products.id')
             ->where('invoices.company_id', $company_id)
             ->whereBetween('date', [$start_date, $end_date])
+            ->whereNotIn('seller_id', $sellersSpecial)
+            ->selectRaw('products.id, products.name, sum(invoice_details.total) as total_amount')
+            ->groupBy('product_id')
+            ->orderBy('total_amount', 'desc')
+            ->limit(10)
+            ->get();
+
+        $productsTop10Special = Invoice::join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
+            ->join('products', 'invoice_details.product_id', '=', 'products.id')
+            ->where('invoices.company_id', $company_id)
+            ->whereBetween('date', [$start_date, $end_date])
+            ->whereIn('seller_id', $sellersSpecial)
             ->selectRaw('products.id, products.name, sum(invoice_details.total) as total_amount')
             ->groupBy('product_id')
             ->orderBy('total_amount', 'desc')
@@ -126,9 +197,19 @@ class InvoiceController extends Controller
         $creditNotesMonth = Invoice::join('customers', 'invoices.customer_id', '=', 'customers.id')
             ->whereBetween('date', [$start_date, $end_date])
             ->where('company_id', $company_id)
+            ->whereNotIn('seller_id', $sellersSpecial)
             ->where('total', '<', 0)
             ->selectRaw('invoices.invoice_number, customers.name, invoices.date, invoices.total')
             ->get();
+
+        $creditNotesMonthSpecial = Invoice::join('customers', 'invoices.customer_id', '=', 'customers.id')
+            ->whereBetween('date', [$start_date, $end_date])
+            ->where('company_id', $company_id)
+            ->whereIn('seller_id', $sellersSpecial)
+            ->where('total', '<', 0)
+            ->selectRaw('invoices.invoice_number, customers.name, invoices.date, invoices.total')
+            ->get();
+        
 
         $pdf = PDF::loadView('reports.sales', 
             compact(
@@ -142,11 +223,17 @@ class InvoiceController extends Controller
                 'productsTop10',
                 'creditNotesMonth',
                 'logo',
-                'companyName'
+                'companyName',
+                'invoicesTotalSpecial',
+                'invoicesGroupedOneSellerSpecial',
+                'customersTop10Special',
+                'productsTop10Special',
+                'creditNotesMonthSpecial',
+                'salesMonths'
             )
         );
 
-        return $pdf->stream('sales_report.pdf');
+        return $pdf->stream('sales_report"'.preg_replace('/[^A-Za-z0-9]/', '', $companyName).'_'.strftime("%B", strtotime($start_date)).'.pdf');
     }
 
 

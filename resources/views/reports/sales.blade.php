@@ -114,6 +114,25 @@
                     padding-bottom: 5px;
             }
 
+            .describe-report {
+                    font-size: 18.5px;
+                    font-weight: bold;
+                    text-align: center;
+                    padding-bottom: 5px;
+                    font-style: italic;
+                    color: #555;
+            }
+
+            h6 {
+                margin: 0;
+                padding: 0;
+                font-size: 24px;
+            }
+
+            .page-break {
+                page-break-after: always;
+            }
+
 			@media only screen and (max-width: 600px) {
 				.invoice-box table tr.top table td {
 					width: 100%;
@@ -127,8 +146,21 @@
 					text-align: center;
 				}
 
-
+  
 			}
+
+            footer {
+                display: fixed;
+                bottom: 0;
+                width: 100%;
+                text-align: center;
+                color: #777;
+                font-size: 12px;
+                padding: 10px;
+                border-top: 1px solid #eee;
+                
+            }
+
 		</style>
 	</head>
 
@@ -146,7 +178,7 @@
 								</td>
 
 								<td>
-									<b>Reporte de ventas</b><br />
+									<b><h6>Reporte de ventas</h6></b><br />
 									Fecha inicial: {{ date('d/m/Y', strtotime($start_date)) }}<br />
 									Fecha final: {{ date('d/m/Y', strtotime($end_date)) }}<br />
 								</td>
@@ -166,9 +198,10 @@
 								</td>
 
 								<td>
-                                <b>Jose Agudo</b><br />
-									Supervisor de ventas<br />
-									jagudo15@gmail.com
+                                    <b>Enrique Puga</b><br />
+									supventas@gathanasiadisr.com<br />
+									<b>Jose Agudo</b><br />
+                                    supventas2@gathanasiadisr.com
 								</td>
 							</tr>
 						</table>
@@ -178,18 +211,29 @@
 
 		</div>
 
+        <p class="describe-report"><b>Ventas General</b></p>
         <p class="describe-table">Cuota mensual y total de ventas</p>
         <div class="invoice-box">
             <table>
                 <tr class="heading">
                     <td>Cuota mensual</td>
                     <td>Total de ventas</td>
+                    <td style="text-align: center">Porcentaje de cumplimiento</td>
                 </tr>
         
                 <tr class="details">
                     <td>{{ number_format($CompanyGoalMonth->goal, 2) }}</td>
         
                     <td>{{ number_format($invoicesTotalMonth->total_amount, 2) }}</td>
+                    
+                    {{-- Calcular porcentaje --}}
+                    @php
+                        $goal = $CompanyGoalMonth->goal;
+                        $totalAmount = $invoicesTotalMonth->total_amount;
+                        $goalPercentage = ($totalAmount / $goal) * 100;
+                        $goalPercentageColor = ($goalPercentage >= 100) ? 'green' : (($goalPercentage >= 80) ? 'yellow' : 'red');
+                    @endphp
+                    <td style="color: {{ $goalPercentageColor }}; text-align: center">{{ number_format($goalPercentage > 100 ? 100 : $goalPercentage, 2) }}%</td>
                 </tr>
             </table>
         </div>
@@ -298,41 +342,122 @@
             </table>
         </div>
 
-        <p class="describe-table">Notas de crédito del periodo</p>
+    </main>
+    <div class="page-break"></div>
+
+    <main>
+        @if($invoicesTotalSpecial->total_amount > 0)
+        <p class="describe-report"><b>Entregas especiales</b></p>
+        <p class="describe-table">Resumen de entregas</p>
         <div class="invoice-box">
             <table>
                 <tr class="heading">
-                    <td>Factura</td>
-                    <td>Cliente</td>
-                    <td>Fecha</td>
-                    <td>Monto</td>
+                    <td>Total</td>
+                </tr>
+        
+                <tr class="details">
+                    <td>{{ number_format($invoicesTotalSpecial->total_amount, 2) }}</td>
+                </tr>
+            </table>
+        </div>
+
+        <p class="describe-table">Entregas agrupadas por vendedor</p>
+        <div class="invoice-box">
+            <table>
+                <tr class="heading">
+                    <td>Vendedor</td>
+                    <td>Total de entregas</td>
                 </tr>
 
                 @php
+                    //acumulador de total de ventas
                     $totalAmount = 0;
                 @endphp
-
-                @foreach ($creditNotesMonth as $creditNote)
+        
+                @foreach ($invoicesGroupedOneSellerSpecial as $invoice)
                     <tr class="item">
-                        <td>{{ $creditNote->invoice_number }}</td>
-                        <td>{{ $creditNote->name }}</td>
-                        <td>{{ date('d/m/Y', strtotime($creditNote->date)) }}</td>
-                        <td>{{ number_format($creditNote->total, 2) }}</td>
+                        <td>{{ $invoice->name }}</td>
+                        <td>{{ number_format($invoice->total_amount, 2) }}</td>
                     </tr>
-
                     @php
-                        $totalAmount += abs($creditNote->total);
+                        $totalAmount += $invoice->total_amount;
                     @endphp
-
                 @endforeach
 
                 <tr class="total">
                     <td></td>
-                    <td></td>
-                    <td></td>
-                    <td>{{ number_format($totalAmount * -1, 2) }}</td>
+                    <td>{{ number_format($totalAmount, 2) }}</td>
                 </tr>
             </table>
+        </div>
+
+        <p class="describe-table">Entregas agrupadas por clientes con mayor monto</p>
+        <div class="invoice-box">
+            <table>
+                <tr class="heading">
+                    <td>Cliente</td>
+                    <td>Total de entregas</td>
+                </tr>
+        
+                @foreach ($customersTop10Special as $customer)
+                    <tr class="item">
+                        <td>{{ $customer->name }}</td>
+                        <td>{{ number_format($customer->total_amount, 2) }}</td>
+                    </tr>
+                @endforeach
+            </table>
+        </div>
+
+        <p class="describe-table">Entregas agrupadas por productos con mayor monto</p>
+        <div class="invoice-box">
+            <table>
+                <tr class="heading">
+                    <td>Producto</td>
+                    <td>Total de entregas</td>
+                </tr>
+        
+                @foreach ($productsTop10Special as $product)
+                    <tr class="item">
+                        <td>{{ $product->name }}</td>
+                        <td>{{ number_format($product->total_amount, 2) }}</td>
+                    </tr>
+                @endforeach
+            </table>
+        </div>
+        @endif
+
+        <p class="describe-table">Total de ventas y entregas</p>
+        <div class="invoice-box">
+            <table>
+                <tr class="heading">
+                    <td>Ventas</td>
+                    <td style="text-align: center">Entregas</td>
+                    <td style="text-align: right">Total</td>
+                </tr>
+        
+                <tr class="total">
+                    <td>{{ number_format($invoicesTotalMonth->total_amount, 2) }}</td>
+                    <td style="text-align: center">{{ number_format($invoicesTotalSpecial->total_amount, 2) }}</td>
+                    <td style="text-align: right">{{ number_format($invoicesTotalMonth->total_amount + $invoicesTotalSpecial->total_amount, 2) }}</td>
+                </tr>
+            </table>
+        </div>
+
+
+        {{-- Grafico de ventas por mes --}}
+        @php
+
+            $values = implode(',', $salesMonths);
+        @endphp
+
+        <br />
+        
+        <p class="describe-table"><b>Gráfico comparativo de ventas y entregas por mes</b></p>
+        <img src="https://quickchart.io/chart?c={type:'bar',data:{labels:['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'],datasets:[{label:'Monto Total',data:[{{ $values }}]}],plugins:{datalabels:{anchor:'end',align:'end'}}}}" alt="Gráfico de ventas por mes" style="width: 100%; max-width: 800px" />
+
     </main>
+
+    <footer>
+        <p>MicroVendSoft | AB Cloud &copy; 2024</p>
 	</body>
 </html>

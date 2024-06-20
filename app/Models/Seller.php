@@ -82,6 +82,7 @@ class Seller extends Model
         $companies = [];
         foreach ($sellers as $seller) {
             //guardar solamente id de las companias
+
             if (!empty($seller->companys($period_start, $period_end)->pluck('company_seller.company_id')->toArray()[0])){
                 $companies[] = $seller->companys($period_start, $period_end)->pluck('company_seller.company_id')->toArray()[0];
             }
@@ -94,17 +95,26 @@ class Seller extends Model
             return 0;
         }
 
+
         if (in_array(1, $companies) && in_array(2, $companies) && in_array(3, $companies)) {
             //Buscar el porcentaje de comision en comisionesOne, si no existe se busca el anterior mas cercano
+            
+
             if (array_key_exists($porcentaje, $commissionsOne)) {
                 return $commissionsOne[$porcentaje][$company_id];
             } else {
                 $porcentajes = array_keys($commissionsOne);
+                $sw = false;
+        
                 foreach ($porcentajes as $p) {
-                    if ($p < $porcentaje) {
+
+                    if ($p < $porcentaje && $sw == false) {
                         $porcentaje = $p;
+                        $sw = true;
                     }
                 }
+
+
                 return $commissionsOne[$porcentaje][$company_id];
             }
         } elseif (in_array(1, $companies) && in_array(2, $companies)) {
@@ -113,10 +123,12 @@ class Seller extends Model
                 return $commissionsTwo[$porcentaje][$company_id];
             } else {
                 $porcentajes = array_keys($commissionsTwo);
+                $sw = false;
 
                 foreach ($porcentajes as $p) {
-                    if ($p < $porcentaje) {
+                    if ($p < $porcentaje && $sw == false) {
                         $porcentaje = $p;
+                        $sw = true;
                     }
                 }
                 
@@ -128,10 +140,11 @@ class Seller extends Model
                 return $commissionsThree[$porcentaje][$company_id];
             } else {
                 $porcentajes = array_keys($commissionsThree);
-
+                $sw = false;
                 foreach ($porcentajes as $p) {
-                    if ($p < $porcentaje) {
+                    if ($p < $porcentaje && $sw == false) {
                         $porcentaje = $p;
+                        $sw = true;
                     }
                 }
                 return $commissionsThree[$porcentaje][$company_id];
