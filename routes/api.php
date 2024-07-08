@@ -26,6 +26,7 @@ Route::controller(InvoiceImportController::class)->group(function () {
 Route::controller(InvoiceController::class)->group(function () {
     Route::get('/invoices', 'index');
     Route::get('/invoices-report/{start_date}/{end_date}/{company_id}', 'report');
+    Route::get('/invoices-report-summary/{end_date}/{company_id}', 'reportSummary');
     Route::get('/invoices/{id}', 'show');
     Route::post('/invoices', 'store');
     Route::put('/invoices/{id}', 'update');

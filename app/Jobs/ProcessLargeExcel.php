@@ -41,10 +41,10 @@ class ProcessLargeExcel implements ShouldQueue
      */
     public function handle()
     {
-                //set unlimited memory limit
-                ini_set('memory_limit', '-1');
-                set_time_limit(0);
-        
+        //set unlimited memory limit
+        ini_set('memory_limit', '-1');
+        set_time_limit(0);
+
         $collectionExcel = Excel::toCollection(new InvoicesImport(), $this->filename);
         $companyId = $this->companyId;
 
@@ -56,10 +56,10 @@ class ProcessLargeExcel implements ShouldQueue
                 $customer = Customer::firstOrCreate([
                     'code' => $row[2],
                     'name' => $row[3],
-                    'branch_code' => $row[4],
-                    'branch_name' => $row[5],
-                    'group_code' => $row[6],
-                    'group_name' => $row[7],
+                    'branch_code' => $row[4] == null ? 'Default' : $row[4],
+                    'branch_name' => $row[5] == null ? 'Default' : $row[5],
+                    'group_code' => $row[6] == null ? 'Default' : $row[6],
+                    'group_name' => $row[7] == null ? 'Default' : $row[7],
                 ]);
 
                 //if seller is empty, create a default seller or use default seller: code 1, name 'Default'

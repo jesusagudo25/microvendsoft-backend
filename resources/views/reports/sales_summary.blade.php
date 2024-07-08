@@ -177,7 +177,7 @@
 								</td>
 
 								<td>
-									<b><h6>Reporte de ventas</h6></b><br />
+									<b><h6>Reporte de ventas sumarizado</h6></b><br />
 									Fecha inicial: {{ date('d/m/Y', strtotime($start_date)) }}<br />
 									Fecha final: {{ date('d/m/Y', strtotime($end_date)) }}<br />
 								</td>
@@ -211,133 +211,70 @@
 		</div>
 
         <p class="describe-report"><b>Ventas General</b></p>
-        <p class="describe-table">Cuota mensual y total de ventas</p>
+        <p class="describe-table">Cuota acumulada y total de ventas</p>
         <div class="invoice-box">
             <table>
                 <tr class="heading">
-                    <td>Cuota mensual</td>
+                    <td>Cuota acumulada</td>
                     <td>Total de ventas</td>
                     <td style="text-align: center">Porcentaje de cumplimiento</td>
                 </tr>
         
                 <tr class="details">
-                    <td>{{ number_format($CompanyGoalMonth->goal, 2) }}</td>
+                    <td>{{ number_format($CompanyGoal->goal, 2) }}</td>
         
-                    <td>{{ number_format($invoicesTotalMonth->total_amount, 2) }}</td>
+                    <td>{{ number_format($invoicesTotal->total_amount, 2) }}</td>
                     
                     {{-- Calcular porcentaje --}}
                     @php
-                        $goal = $CompanyGoalMonth->goal;
-                        $totalAmount = $invoicesTotalMonth->total_amount;
+                        $goal = $CompanyGoal->goal;
+                        $totalAmount = $invoicesTotal->total_amount;
                         $goalPercentage = ($totalAmount / $goal) * 100;
-                        $goalPercentageColor = ($goalPercentage >= 100) ? 'green' : (($goalPercentage >= 80) ? 'yellow' : 'red');
                     @endphp
                     <td style=" text-align: center">{{ number_format($goalPercentage > 100 ? 100 : $goalPercentage, 2) }}%</td>
                 </tr>
             </table>
         </div>
-
-        <p class="describe-table">Ventas agrupadas por vendedor y cuota mensual</p>
+        <p class="describe-table">Ventas agrupadas por vendedor y comisiones</p>
         <div class="invoice-box">
             <table>
 				<tr class="heading">
 					<td>Vendedor</td>
-                    <td>Cuota mensual</td>
                     <td>Total de ventas</td>
+                    <td >Cuota acumulada</td>
                     <td>Porcentaje de cumplimiento</td>
-                    <td>Comisión</td>
+                    <td >Comisión acumulada</td>
 				</tr>
                 @php
-                    //acumulador de cuota mensual, total de ventas y comisión
-                    $totalGoal = 0;
+                    //acumulador de comisión
                     $totalAmount = 0;
                     $totalCommission = 0;
+                    $totalGoal = 0;
                 @endphp
 
                 @foreach ($invoicesGroupedOneSeller as $invoice)
                     <tr class="item">
                         <td>{{ $invoice->name }}</td>
-                        <td>{{ number_format($invoice->goal, 2) }}</td>
                         <td>{{ number_format($invoice->total_amount, 2) }}</td>
+                        <td >{{ number_format($invoice->totalGoal, 2) }}</td>
                         <td style="">{{ number_format($invoice->goal_percentage, 2) }}%</td>
-                        <td>{{ number_format($invoice->commission, 2) }}</td>
+                        <td >{{ number_format($invoice->totalCommissions, 2) }}</td>
                     </tr>
                     @php
-                        $totalGoal += $invoice->goal;
                         $totalAmount += $invoice->total_amount;
-                        $totalCommission += $invoice->commission;
+                        $totalCommission += $invoice->totalCommissions;
+                        $totalGoal += $invoice->totalGoal;
                     @endphp
 
                 @endforeach
 
                 <tr class="total">
                     <td></td>
-                    <td>{{ number_format($totalGoal, 2) }}</td>
                     <td>{{ number_format($totalAmount, 2) }}</td>
+                    <td>{{ number_format($totalGoal, 2) }}</td>
                     <td></td>
                     <td>{{ number_format($totalCommission, 2) }}</td>
                 </tr>
-            </table>
-        </div>
-
-        <p class="describe-table">Ventas agrupadas por clientes con mayor monto</p>
-        <div class="invoice-box">
-            <table>
-                <tr class="heading">
-                    <td>Cliente</td>
-                    <td>Total de ventas</td>
-                </tr>
-
-
-                @foreach ($customersTop10 as $customer)
-                    <tr class="item">
-                        <td>{{ $customer->name }}</td>
-                        <td>{{ number_format($customer->total_amount, 2) }}</td>
-                    </tr>
-
-                @endforeach
-
-            </table>
-        </div>
-
-        <p class="describe-table">Ventas agrupadas por tipos de clientes con mayor monto</p>
-        <div class="invoice-box">
-            <table>
-                <tr class="heading">
-                    <td>Grupo de clientes</td>
-                    <td>Total de ventas</td>
-                </tr>
-
-
-
-                @foreach ($customersGroupedTop10 as $customer)
-                    <tr class="item">
-                        <td>{{ $customer->group_name }}</td>
-                        <td>{{ number_format($customer->total_amount, 2) }}</td>
-                    </tr>
-                    @php
-                        $totalAmount += $customer->total_amount;
-                    @endphp
-
-                @endforeach
-            </table>
-        </div>
-
-        <p class="describe-table">Ventas agrupadas por productos con mayor monto</p>
-        <div class="invoice-box">
-            <table>
-                <tr class="heading">
-                    <td>Producto</td>
-                    <td>Total de ventas</td>
-                </tr>
-
-                @foreach ($productsTop10 as $product)
-                    <tr class="item">
-                        <td>{{ $product->name }}</td>
-                        <td>{{ number_format($product->total_amount, 2) }}</td>
-                    </tr>
-
-                @endforeach
             </table>
         </div>
 
@@ -390,39 +327,7 @@
             </table>
         </div>
 
-        <p class="describe-table">Entregas agrupadas por clientes con mayor monto</p>
-        <div class="invoice-box">
-            <table>
-                <tr class="heading">
-                    <td>Cliente</td>
-                    <td>Total de entregas</td>
-                </tr>
-        
-                @foreach ($customersTop10Special as $customer)
-                    <tr class="item">
-                        <td>{{ $customer->name }}</td>
-                        <td>{{ number_format($customer->total_amount, 2) }}</td>
-                    </tr>
-                @endforeach
-            </table>
-        </div>
 
-        <p class="describe-table">Entregas agrupadas por productos con mayor monto</p>
-        <div class="invoice-box">
-            <table>
-                <tr class="heading">
-                    <td>Producto</td>
-                    <td>Total de entregas</td>
-                </tr>
-        
-                @foreach ($productsTop10Special as $product)
-                    <tr class="item">
-                        <td>{{ $product->name }}</td>
-                        <td>{{ number_format($product->total_amount, 2) }}</td>
-                    </tr>
-                @endforeach
-            </table>
-        </div>
         @endif
 
         <p class="describe-table">Total de ventas y entregas</p>
@@ -435,24 +340,12 @@
                 </tr>
         
                 <tr class="total">
-                    <td>{{ number_format($invoicesTotalMonth->total_amount, 2) }}</td>
+                    <td>{{ number_format($invoicesTotal->total_amount, 2) }}</td>
                     <td style="text-align: center">{{ number_format($invoicesTotalSpecial->total_amount, 2) }}</td>
-                    <td style="text-align: right">{{ number_format($invoicesTotalMonth->total_amount + $invoicesTotalSpecial->total_amount, 2) }}</td>
+                    <td style="text-align: right">{{ number_format($invoicesTotal->total_amount + $invoicesTotalSpecial->total_amount, 2) }}</td>
                 </tr>
             </table>
         </div>
-
-
-        {{-- Grafico de ventas por mes --}}
-        @php
-
-            $values = implode(',', $salesMonths);
-        @endphp
-
-        <br />
-        
-        <p class="describe-table"><b>Gráfico comparativo de ventas y entregas por mes</b></p>
-        <img src="https://quickchart.io/chart?c={type:'bar',data:{labels:['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'],datasets:[{label:'Monto Total',data:[{{ $values }}]}],plugins:{datalabels:{anchor:'end',align:'end'}}}}" alt="Gráfico de ventas por mes" style="width: 100%; max-width: 800px" />
 
     </main>
 

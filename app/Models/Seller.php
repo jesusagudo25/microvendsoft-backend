@@ -24,6 +24,11 @@ class Seller extends Model
             ->where('period_end', $period_end);
     }
 
+    public function commissions()
+    {
+        return $this->hasMany(SellerCommission::class);
+    }
+
     public function searchCommission($name, $period_start, $period_end, $porcentaje, $company_id)
     {
         //Porcentajes
@@ -75,8 +80,39 @@ class Seller extends Model
             '76' => ['3' => 100],
         ];
 
+        $specialsSellers = [
+            'PAUL SOLIS'
+        ];
+
         //Search all sellers with equal name
         $sellers = Seller::where('name', $name)->get();
+
+        if (in_array($name, $specialsSellers)) {
+            //Buscamos el id del vendedor que pertenezca a la compania
+            $sellerId = null;
+            foreach ($sellers as $seller) {
+                $companySeller = Company::join('company_seller', 'companies.id', '=', 'company_seller.company_id')
+                ->where('company_seller.company_id', $company_id)
+                ->where('seller_id', $seller->id)
+                ->where('period_start', $period_start)
+                ->where('period_end', $period_end)
+                ->get();
+
+                if (!empty($companySeller[0])) {
+                    $sellerId = $seller->id;
+                }
+            }
+
+            //Buscar las ventas del vendedor de acuerdo al periodo, la compania. La comision sera el 1% de las ventas
+            if (!empty($sellerId)) {
+                $total = Invoice::where('seller_id', $sellerId)
+                ->where('company_id', $company_id)
+                ->whereBetween('date', [$period_start, $period_end])
+                ->sum('total');
+
+                return $total * 0.01;
+            }
+        }
 
         //buscar las companias de cada vendedor
         $companies = [];
