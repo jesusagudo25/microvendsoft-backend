@@ -329,7 +329,7 @@ class InvoiceController extends Controller
         });
 
         //Ordenar los vendedores por el porcentaje de cumplimiento de la cuota
-        $invoicesGroupedOneSeller = $invoicesGroupedOneSeller->sortByDesc('totalCommissions');
+        $invoicesGroupedOneSeller = $invoicesGroupedOneSeller->sortByDesc('goal_percentage');
 
         $invoicesGroupedOneSellerSpecial = Invoice::join('sellers', 'invoices.seller_id', '=', 'sellers.id')
             ->where('date','<=', $end_date)
