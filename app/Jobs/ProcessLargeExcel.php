@@ -65,7 +65,7 @@ class ProcessLargeExcel implements ShouldQueue
                 //if seller is empty, create a default seller or use default seller: code 1, name 'Default'
                 if($row[8] == null){
                     $row[8] = 1;
-                    $row[9] = 'Default';
+                    $row[9] = 'VENDEDOR EN BLANCO';
                 }
     
                 //Create Seller
@@ -101,6 +101,10 @@ class ProcessLargeExcel implements ShouldQueue
                         'unit_price' => $row[16],
                         'total' => $row[15],
                     ]);
+
+                    //update total invoice
+                    $invoicesExists->total = $invoicesExists->total + $row[15];
+                    $invoicesExists->save();
                 }
                 else{
                     $invoice = Invoice::firstOrCreate([
@@ -122,6 +126,8 @@ class ProcessLargeExcel implements ShouldQueue
                         'total' => $row[15] == null ? 0 : $row[15],
                     ]);
                 }
+
+                
 
             }); 
     
